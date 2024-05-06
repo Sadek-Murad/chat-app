@@ -1,0 +1,66 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # Installieren von Terraform
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      # Terraform-Befehle ausführen
+      - name: Execute Terraform Commands
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      # Ausgabe der Bucket-URL erfassen
+      - name: Capture Bucket URL
+        id: bucket_url
+        run: echo "::set-output name=bucket_url::$(terraform output bucket_url)"
+
+      # Installieren von Node.js und npm
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 'latest'
+
+      # Installieren der Anwendungsabhängigkeiten
+      - name: Install Application Dependencies
+        run: npm install
+
+      # Tests ausführen
+      - name: Run Tests
+        run: npm test
+
+      # Anwendung bauen
+      - name: Build Application
+        run: npm run build
+
+      # Anwendung in S3 deployen
+      - name: Deploy to S3
+        uses: jakejarvis/s3-sync-action@v2.1.0
+        with:
+          args: --acl public-read --delete
+        env:
+          AWS_S3_BUCKET: ${{ steps.bucket_url.outputs.bucket_url }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }} 
+          SOURCE_DIR: 'build'
+
+          
+      # Bash-Skript ausführen
+      - name: Run Bash Script
+        run: ./bash.sh
+
+
