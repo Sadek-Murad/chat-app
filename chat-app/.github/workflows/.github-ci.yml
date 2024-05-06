@@ -20,6 +20,7 @@ jobs:
       # Terraform-Befehle ausführen
       - name: Execute Terraform Commands
         run: |
+          cd Terraform/
           terraform init
           terraform apply -auto-approve
 
@@ -55,12 +56,10 @@ jobs:
           AWS_S3_BUCKET: ${{ steps.bucket_url.outputs.bucket_url }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }} 
           SOURCE_DIR: 'build'
 
-          
       # Bash-Skript ausführen
       - name: Run Bash Script
-        run: ./bash.sh
-
-
+        run: |
+          cd Terraform/
+          ./bash.sh
